@@ -93,7 +93,15 @@ struct DecimalCoreTests {
   @available(anyAppleOS 26.0, *)
   func testExponentAndSignificand() {
     #expect(Decimal128("0e-6143")!.exponent == Int.min)
+    #expect(Decimal128("-0e+50")!.exponent == Int.min)
+    let noncanonical =
+      Decimal128(bitPattern: Decimal128().bitPattern | UInt128._1e34)
+    #expect(noncanonical.exponent == Int.min)
+
     #expect(Decimal128.infinity.exponent == Int.max)
+    #expect((-Decimal128.infinity).exponent == Int.max)
+    #expect(Decimal128.nan.exponent == Int.max)
+    #expect(Decimal128.signalingNaN.exponent == Int.max)
 
     #expect(Decimal128("-12.30")!.significand.bitPattern
             == Decimal128("1.230")!.bitPattern)
@@ -721,6 +729,26 @@ struct DecimalCoreTests {
     #expect(Decimal128(nines, &flags).bitPattern
             == Decimal128("1.000000000000000000000000000000000e35")!.bitPattern)
     #expect(flags == .inexact)
+
+    #expect(Int(Decimal128(sign: .plus, exponent: 3, significand: 1)) == 1000)
+    #expect(Int8(Decimal128("127.5")!) == 127)
+    #expect(UInt(Decimal128("-0.75")!) == 0)
+    #expect(Int(Decimal128()) == 0)
+    #expect(UInt(-Decimal128.leastNormalMagnitude) == 0)
+
+    #expect(Int8(exactly: Decimal128("127.0")!) == 127)
+    #expect(Int8(exactly: Decimal128("126.5")!) == nil)
+    #expect(Int8(exactly: Decimal128("128.0")!) == nil)
+    #expect(Int8(exactly: -Decimal128("128.0")!) == -128)
+    #expect(Int8(exactly: -Decimal128("129.0")!) == nil)
+    #expect(UInt(exactly: (-1 as Decimal128)) == nil)
+    #expect(Int(exactly: -Decimal128.infinity) == nil)
+    #expect(Int(exactly: Decimal128.nan) == nil)
+
+    let _1e38 = UInt128._exp10[38]
+    let _1e76 = DoubleWidth<UInt128>(_1e38.multipliedFullWidth(by: _1e38))
+    #expect(DoubleWidth<UInt128>(exactly: Decimal128("1e77")!) == 10 * _1e76)
+    #expect(DoubleWidth<UInt128>(exactly: Decimal128("2e77")!) == nil)
   }
 
   @Test

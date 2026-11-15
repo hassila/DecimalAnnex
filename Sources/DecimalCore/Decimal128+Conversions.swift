@@ -1,4 +1,123 @@
 @available(anyAppleOS 26.0, *)
+extension FixedWidthInteger {
+  @inlinable
+  internal static func _convert(
+    _ source: Decimal128
+  ) -> (value: Self, inexact: Bool)? {
+    guard source._isFiniteNonzero else {
+      if !source.isFinite { return nil }
+      return (0, false)
+    }
+
+    let isSignMinus = source._isSignMinus
+    var unbiasedExponent = Int(source.exponentBitPattern) &- 6176
+    var c = source.significandBitPattern
+    var inexact = false
+    if unbiasedExponent < -33 {
+      return (0, true)
+    } else if unbiasedExponent < 0 {
+      let r: UInt128
+      (c, r) = c._quotientAndRemainder(dividingBy1e: -unbiasedExponent)
+      inexact = r != 0
+      if c == 0 {
+        return (0, inexact)
+      }
+      unbiasedExponent = 0
+    }
+    guard
+      (Self.isSigned || !isSignMinus) && unbiasedExponent < Self.bitWidth,
+      var magnitude = Magnitude(exactly: c)
+    else { return nil }
+
+    if unbiasedExponent > 0 && unbiasedExponent <= 38 {
+      guard let x =
+        unsafe Magnitude(exactly: UInt128._exp10[unchecked: unbiasedExponent])
+      else { return nil }
+      let overflow: Bool
+      (magnitude, overflow) = magnitude.multipliedReportingOverflow(by: x)
+      guard !overflow else { return nil }
+    } else if unbiasedExponent > 38 {
+      guard Self.bitWidth > 128 else { return nil }
+      var n = unbiasedExponent % 38
+      if n != 0 {
+        let x = unsafe Magnitude(UInt128._exp10[unchecked: n])
+        let overflow: Bool
+        (magnitude, overflow) = magnitude.multipliedReportingOverflow(by: x)
+        guard !overflow else { return nil }
+      }
+      // Exponentiation by squaring.
+      n = unbiasedExponent / 38
+      var power = unsafe Magnitude(UInt128._exp10[unchecked: 38])
+      while n != 0 {
+        if n & 1 != 0 {
+          let overflow: Bool
+          (magnitude, overflow) =
+            magnitude.multipliedReportingOverflow(by: power)
+          guard !overflow else { return nil }
+        }
+        n &>>= 1
+        if n != 0 {
+          let overflow: Bool
+          (power, overflow) = power.multipliedReportingOverflow(by: power)
+          guard !overflow else { return nil }
+        }
+      }
+    }
+
+    guard magnitude <= (isSignMinus ? Self.min.magnitude : Self.max.magnitude)
+    else { return nil }
+    return (
+      isSignMinus
+        ? 0 &- Self(truncatingIfNeeded: magnitude)
+        : Self(truncatingIfNeeded: magnitude),
+      inexact)
+  }
+
+  /// Creates an integer from the given decimal floating-point value,
+  /// rounding toward zero.
+  ///
+  /// Any fractional part of the value passed as `source` is removed,
+  /// rounding the value toward zero.
+  ///
+  ///     let x = Int8(#Decimal128(127.5))
+  ///     // x == 127
+  ///     let y = UInt(#Decimal128(-0.75))
+  ///     // y == 0
+  ///
+  /// If `source` is outside the bounds of this type after rounding toward zero,
+  /// a runtime error may occur.
+  ///
+  /// - Parameter source: The decimal floating-point value to convert.
+  ///   `source` must be representable in this type after rounding toward zero.
+  @inline(always)
+  public init(_ source: Decimal128) {
+    guard let result = Self._convert(source) else {
+      fatalError("Value cannot be converted because it is unrepresentable.")
+    }
+    self = result.value
+  }
+
+  /// Creates an integer from the given decimal floating-point value,
+  /// if it can be represented exactly.
+  ///
+  /// If the value passed as `source` is not representable exactly, the result
+  /// is `nil`.
+  ///
+  ///     Int8(exactly: #Decimal128(127.0))  // Optional(127)
+  ///     Int8(exactly: #Decimal128(126.5))  // nil
+  ///     Int8(exactly: #Decimal128(128.0))  // nil
+  ///
+  /// - Parameter source: The decimal floating-point value to convert.
+  @inline(always)
+  public init?(exactly source: Decimal128) {
+    guard let result = Self._convert(source), !result.inexact else {
+      return nil
+    }
+    self = result.value
+  }
+}
+
+@available(anyAppleOS 26.0, *)
 extension Decimal128 {
   @inlinable
   internal init<T: BinaryInteger>(
