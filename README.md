@@ -17,6 +17,22 @@ x + y == 3/10  // true
 It conforms to the standard library `FloatingPoint` protocol, making it usable in generic floating-point algorithms.
 
 The implementation is written in native Swift and has no dependency on Foundation.
+It has been tested (outside this repository) against published corpora, and it benchmarks favorably against reference implementations:
+
+| Operation                      | DecimalAnnex<br>0.1.5 | Intel<br>2.0U5 | Boost<br>`21bb2ed` | Foundation<br>macOS 26.7 |
+|--------------------------------|----------------------:|---------------:|-------------------:|-------------------------:|
+| Add                            |               **9.2** |         10.5   |             15.4   |                    401.8 |
+| Subtract                       |               **9.2** |         11.6   |             15.0   |                    387.5 |
+| Multiply                       |               **5.7** |         20.1   |            **5.5** |                    310.8 |
+| Divide                         |              **29.0** |         38.7   |             74.1   |                   1447.6 |
+| Fused multiply-add             |              **19.6** |         33.1   |             35.8   |                        — |
+| Round to integer, ties to even |                16.7   |          9.1   |            **5.4** |                    470.8 |
+| Convert text to decimal        |              **15.1** |         17.1   |             20.8   |                    460.4 |
+| Convert decimal to text *      |                26.1   |        **9.0** |             21.2   |                   1393.9 |
+
+> *Median ns/operation for mixture of 'everyday' operands (50% signed values to two decimal places).
+> Benchmarked on Apple M2 Pro using generated harness.
+> Conversion to text includes initialization of a `String` value for DecimalAnnex and Foundation only.*
 
 ## Representation
 
@@ -25,8 +41,9 @@ This distinguishes representations such as `1.0` and `1.00` that compare equal t
 For arithmetic operations, IEEE 754 "preferred exponent" rules determine the representation of their results;
 use `quantized(by:)` to select a quantum explicitly.
 
-To avoid loss of precision and preserve meaningful trailing zeros, `Decimal128` doesn't conform to `ExpressibleByFloatLiteral`,
-but values can be created using decimal float literals by calling a macro.
+To avoid loss of precision and preserve meaningful trailing zeros, `Decimal128` doesn't conform to `ExpressibleByFloatLiteral`.
+Instead, values can be created using decimal float literals by calling a macro,
+which will also warn if creating a value from the literal argument requires inexact rounding.
 
 ```swift
 let a = #Decimal128(1.0)
@@ -38,8 +55,7 @@ a == b                  // true
 a.quantum == b.quantum  // false
 ```
 
-The macro will warn if creating a value from the literal argument requires inexact rounding;
-if the rounded value is finite, a fix-it is offered.
+You can omit the macro (and its dependencies) by disabling the package trait `Macros`.
 
 ## Rounding direction and status flags
 
