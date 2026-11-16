@@ -2046,38 +2046,12 @@ extension Decimal128: FloatingPoint {
   }
 
   @inlinable
+  @inline(always)
   internal func _rounded(
     _ rule: _DecimalFloatingPointRoundingRule
   ) -> Decimal128 {
-    if isSignalingNaN {
-      _signal(.invalid)
-      return _quiet._canonical
-    }
-    if exponentBitPattern >= 6176 { return _canonical }
-    if isZero { return _isSignMinus ? -Self() : Self() }
-
-    let n = Int(exponentBitPattern) &- 6176
-    var c = significandBitPattern
-    let digit: UInt128
-    let sticky: Bool
-    if n < -34 {
-      (c, digit) = (0, 0)
-      sticky = true
-    } else {
-      let (q, r) = c._quotientAndRemainder(dividingBy1e: -n &- 1)
-      (c, digit) = q.quotientAndRemainder(dividingBy: 10)
-      sticky = r != 0
-    }
-    if Self._roundsAway(
-      isSignMinus: _isSignMinus,
-      significand: c,
-      digit: UInt8(digit),
-      sticky: sticky,
-      rule
-    ) {
-      c &+= 1
-    }
-    return Self(sign: sign, exponentBitPattern: 6176, significandBitPattern: c)
+    var flags: DecimalFloatingPointStatusFlags = []
+    return _rounded(rule, &flags)
   }
 
   /// Returns this value rounded to the nearest integral value
@@ -2138,37 +2112,68 @@ extension Decimal128: FloatingPoint {
     _ rule: _DecimalFloatingPointRoundingRule,
     _ flags: inout DecimalFloatingPointStatusFlags
   ) -> Decimal128 {
-    if isSignalingNaN {
-      _signal(.invalid, into: &flags)
-      return _quiet._canonical
+    guard _isFiniteNonzero else {
+      if isSignalingNaN {
+        _signal(.invalid, into: &flags)
+        return _quiet._canonical
+      }
+      if exponentBitPattern >= 6176 {
+        return _canonical
+      }
+      return _isSignMinus ? -Self() : Self()
     }
-    if exponentBitPattern >= 6176 { return _canonical }
-    if isZero { return _isSignMinus ? -Self() : Self() }
 
-    let n = Int(exponentBitPattern) &- 6176
-    var c = significandBitPattern
-    let digit: UInt128
-    let sticky: Bool
-    if n < -34 {
-      (c, digit) = (0, 0)
-      sticky = true
+    let e = exponentBitPattern
+    if e >= 6176 {
+      return self
+    }
+
+    let isSignMinus = _isSignMinus
+    let n = Int(e) &- 6176
+    let c = significandBitPattern
+    var q: UInt128
+    let r: UInt128
+    let half: UInt128
+
+    assert(n < 0)
+    if n >= -19 && n <= -1 && c < (1 &<< 64) {
+      let c_ = UInt64(truncatingIfNeeded: c)
+      let x = unsafe UInt64(truncatingIfNeeded: UInt128._exp10[unchecked: -n])
+      let (q_, r_) = c_.quotientAndRemainder(dividingBy: x)
+      q = UInt128(q_)
+      r = UInt128(r_)
+      half = r == 0 ? 1 : UInt128(x &>> 1)
+    } else if n >= -34 {
+      (q, r) = c._quotientAndRemainder(dividingBy1e: -n)
+      half = r == 0 ? 1 : unsafe ._exp10[unchecked: -n] &>> 1
     } else {
-      let (q, r) = c._quotientAndRemainder(dividingBy1e: -n &- 1)
-      (c, digit) = q.quotientAndRemainder(dividingBy: 10)
-      sticky = r != 0
+      q = 0
+      r = c
+      half = ._1e34
     }
-    let digit_ = UInt8(digit)
-    if Self._roundsAway(
-      isSignMinus: _isSignMinus,
-      significand: c,
-      digit: digit_,
-      sticky: sticky,
-      rule
-    ) {
-      c &+= 1
+    if r != 0 {
+      let nextAway: Bool =
+        switch rule {
+        case .toNearestOrEven:
+          r > half || (r == half && (q & 1) != 0)
+        case .toNearestOrAwayFromZero:
+          r >= half
+        case .towardZero:
+          false
+        case .awayFromZero:
+          true
+        case .down:
+          isSignMinus
+        case .up:
+          !isSignMinus
+        @unknown default:
+          fatalError("Unknown rounding rule.")
+        }
+      if nextAway { q &+= 1 }
+      _signal(.inexact, into: &flags)
     }
-    if digit != 0 || sticky { _signal(.inexact, into: &flags) }
-    return Self(sign: sign, exponentBitPattern: 6176, significandBitPattern: c)
+    let abs = Self(bitPattern: 6176 &<< 113 | q)
+    return isSignMinus ? -abs : abs
   }
 
   /// Returns this value rounded to the nearest integral value
