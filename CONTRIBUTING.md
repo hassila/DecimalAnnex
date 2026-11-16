@@ -1,4 +1,4 @@
-# Contributing
+# Contributing to DecimalAnnex
 
 Thank you for your interest in contributing to this implementation of decimal floating-point arithmetic!
 

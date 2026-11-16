@@ -30,7 +30,7 @@ let package = Package(
 //      .product(name: "RealModule", package: "swift-numerics"),
       ],
       swiftSettings: [
-          .strictMemorySafety(),
+        .strictMemorySafety(),
       ]),
     .macro(
       name: "DecimalMacros",

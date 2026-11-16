@@ -1,4 +1,4 @@
-# Security Policy
+# Reporting a security vulnerability
 
 If you believe that you've found a security vulnerability in this project,
 please report it using GitHub's [private vulnerability reporting feature][reporting].
