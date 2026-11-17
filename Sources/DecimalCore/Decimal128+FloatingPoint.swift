@@ -2136,7 +2136,7 @@ extension Decimal128: FloatingPoint {
     let half: UInt128
 
     assert(n < 0)
-    if n >= -19 && n <= -1 && c < (1 &<< 64) {
+    if n >= -19 && c < (1 &<< 64) {
       let c_ = UInt64(truncatingIfNeeded: c)
       let x = unsafe UInt64(truncatingIfNeeded: UInt128._exp10[unchecked: -n])
       let (q_, r_) = c_.quotientAndRemainder(dividingBy: x)
