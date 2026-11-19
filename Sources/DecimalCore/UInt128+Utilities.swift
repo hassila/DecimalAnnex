@@ -269,6 +269,7 @@ extension UInt128 {
   }
 
   @inlinable
+  @inline(always)
   internal var _commonLogarithm: Int {
     // See discussion at:
     // https://lemire.me/blog/2021/05/28/computing-the-number-of-digits-of-an-integer-quickly/
