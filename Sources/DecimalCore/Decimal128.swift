@@ -25,8 +25,10 @@ public struct Decimal128: BitwiseCopyable, Sendable {
 extension Decimal128 {
   @inlinable
   public var sign: FloatingPointSign {
-    let rawValue = Int(truncatingIfNeeded: bitPattern &>> 127)
-    return unsafe FloatingPointSign(rawValue: rawValue).unsafelyUnwrapped
+    @inline(always) get {
+      let rawValue = Int(truncatingIfNeeded: bitPattern &>> 127)
+      return unsafe FloatingPointSign(rawValue: rawValue).unsafelyUnwrapped
+    }
   }
 
   @inlinable
@@ -99,10 +101,12 @@ extension Decimal128 {
   /// and includes extra trailing bits.
   @inlinable
   public var exponentBitPattern: UInt {
-    if magnitude.bitPattern < (0x3 &<< 125) {
-      UInt(truncatingIfNeeded: bitPattern &>> 113) & 0x3fff
-    } else {
-      UInt(truncatingIfNeeded: bitPattern &>> 111) & 0x3fff
+    @inline(always) get {
+      if magnitude.bitPattern < (0x3 &<< 125) {
+        UInt(truncatingIfNeeded: bitPattern &>> 113) & 0x3fff
+      } else {
+        UInt(truncatingIfNeeded: bitPattern &>> 111) & 0x3fff
+      }
     }
   }
 
@@ -114,10 +118,12 @@ extension Decimal128 {
   /// bits; for infinite values, it includes ignored bits.
   @inlinable
   public var significandBitPattern: UInt128 {
-    if magnitude.bitPattern < (0x3 &<< 125) {
-      bitPattern & (1 &<< 113 &- 1)
-    } else {
-      bitPattern & (1 &<< 111 &- 1) | (1 &<< 113)
+    @inline(always) get {
+      if magnitude.bitPattern < (0x3 &<< 125) {
+        bitPattern & (1 &<< 113 &- 1)
+      } else {
+        bitPattern & (1 &<< 111 &- 1) | (1 &<< 113)
+      }
     }
   }
 
