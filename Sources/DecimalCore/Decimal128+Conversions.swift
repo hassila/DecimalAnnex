@@ -403,6 +403,7 @@ extension Decimal128 {
       significandBitPattern: d)
   }
 
+#if !((os(macOS) || targetEnvironment(macCatalyst)) && arch(x86_64))
   /// Creates a new decimal floating-point value with the fewest significant
   /// digits that converts back to the given binary floating-point value with
   /// rounding to the nearest representable value (ties to even).
@@ -451,6 +452,7 @@ extension Decimal128 {
   ) {
     self.init(_shortest: source, &flags)!
   }
+#endif
 
   /// Creates a new decimal floating-point value with the fewest significant
   /// digits that converts back to the given binary floating-point value with

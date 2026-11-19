@@ -762,6 +762,27 @@ struct DecimalCoreTests {
     #expect(Double(nearest: y) == x)
     #expect(MockFloat128(nearest: y).bitPattern == 0x3ffb_9999_9999_9999_9999_9999_9999_999a)
 
+    var flags: DecimalFloatingPointStatusFlags = []
+    #expect(Decimal128(shortest: (2 as Float), &flags) == 2)
+    #expect(flags.isEmpty)
+
+    flags = []
+    #expect(Decimal128(shortest: Float.infinity, &flags) == .infinity)
+    #expect(flags.isEmpty)
+
+    flags = []
+    let pow2 = MockFloat128(
+      sign: .plus, exponentBitPattern: 16383 + 2062, significandBitPattern: 0)
+    #expect(Decimal128(nearest: pow2, &flags).bitPattern
+            == Decimal128("5.294818274723595436149125396671685e620")!.bitPattern)
+    #expect(flags == .inexact)
+
+    #expect(MockFloat128(nearest: Decimal128("1e359")!).bitPattern
+            == 0x44a7_7c9d_44a5_c17a_6a6d_13b8_a812_51c7)
+    #expect(MockFloat128(nearest: Decimal128("-1e-4967")!).bitPattern
+            == 1 << 127)
+
+#if !((os(macOS) || targetEnvironment(macCatalyst)) && arch(x86_64))
     let a: Float16 = 1.001
     #expect(Decimal128(shortest: a).description == "1.001")
     #expect(Decimal128(nearest: a).description == "1.0009765625") // 1 + 1/1024.
@@ -771,7 +792,7 @@ struct DecimalCoreTests {
     #expect(Float16(nearest: Decimal128("1.00048828125")!) == b)
     #expect(Float16(nearest: Decimal128("1.00048828126")!) == b.nextUp)
 
-    var flags: DecimalFloatingPointStatusFlags = []
+    flags = []
     let c =
       Decimal128(nearest: Float16(bitPattern: 0xfd01) /* -snan(0x1) */, &flags)
     #expect(c.isNaN && !c.isSignalingNaN)
@@ -779,20 +800,9 @@ struct DecimalCoreTests {
     #expect(flags == .invalid)
 
     flags = []
-    let pow2 = MockFloat128(
-      sign: .plus, exponentBitPattern: 16383 + 2062, significandBitPattern: 0)
-    #expect(Decimal128(nearest: pow2, &flags).bitPattern
-            == Decimal128("5.294818274723595436149125396671685e620")!.bitPattern)
-    #expect(flags == .inexact)
-
-    flags = []
     #expect(Decimal128(shortest: (2048 as Float16), &flags) == 2048)
     #expect(flags.isEmpty)
 
-    #expect(MockFloat128(nearest: Decimal128("1e359")!).bitPattern
-            == 0x44a7_7c9d_44a5_c17a_6a6d_13b8_a812_51c7)
-    #expect(MockFloat128(nearest: Decimal128("-1e-4967")!).bitPattern
-            == 1 << 127)
     #expect(Float16(nearest: Decimal128.infinity) == .infinity)
     #expect(Float16(nearest: -Decimal128(nan: 10000, signaling: false)).isNaN)
 
@@ -806,14 +816,7 @@ struct DecimalCoreTests {
     #expect(flags.isEmpty)
 
     #expect(Float16(nearest: Decimal128("-0.00")!).bitPattern == 0x8000)
-
-    flags = []
-    #expect(Decimal128(shortest: (2 as Float16), &flags) == 2)
-    #expect(flags.isEmpty)
-
-    flags = []
-    #expect(Decimal128(shortest: Float16.infinity, &flags) == .infinity)
-    #expect(flags.isEmpty)
+#endif
   }
 
   @Test
