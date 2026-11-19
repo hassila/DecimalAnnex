@@ -102,7 +102,7 @@ extension Decimal128 {
   @inlinable
   public var exponentBitPattern: UInt {
     @inline(always) get {
-      if magnitude.bitPattern < (0x3 &<< 125) {
+      if _combinationBitPattern < 0x18000 {
         UInt(truncatingIfNeeded: bitPattern &>> 113) & 0x3fff
       } else {
         UInt(truncatingIfNeeded: bitPattern &>> 111) & 0x3fff
@@ -119,7 +119,7 @@ extension Decimal128 {
   @inlinable
   public var significandBitPattern: UInt128 {
     @inline(always) get {
-      if magnitude.bitPattern < (0x3 &<< 125) {
+      if _combinationBitPattern < 0x18000 {
         bitPattern & (1 &<< 113 &- 1)
       } else {
         bitPattern & (1 &<< 111 &- 1) | (1 &<< 113)
