@@ -160,7 +160,7 @@ extension Decimal128 {
   ///
   /// - Precondition: `significand` is less than `1e69`; if `sticky` is `true`,
   ///   `significand` is at least `1e34`.
-  @inlinable
+  @usableFromInline
   internal static func _pack(
       isSignMinus: Bool,
       biasedExponent: Int,
@@ -315,7 +315,7 @@ extension Decimal128 {
 
 @available(anyAppleOS 26.0, *)
 extension Decimal128: AdditiveArithmetic {
-  @inlinable
+  @usableFromInline
   internal func _adding(
     _ rhs: Decimal128,
     rounding rule: _DecimalFloatingPointRoundingRule,
@@ -920,7 +920,7 @@ extension Decimal128: AdditiveArithmetic {
 
 @available(anyAppleOS 26.0, *)
 extension Decimal128: Numeric {
-  @inlinable
+  @usableFromInline
   internal func _multiplied(
     by rhs: Decimal128,
     rounding rule: _DecimalFloatingPointRoundingRule,

@@ -976,7 +976,7 @@ extension Decimal128: CustomDebugStringConvertible {
 
 @available(anyAppleOS 26.0, *)
 extension Decimal128: LosslessStringConvertible {
-  @inlinable
+  @usableFromInline
   internal static func _parse(
     utf8: Span<UInt8>,
     rounding rule: _DecimalFloatingPointRoundingRule,

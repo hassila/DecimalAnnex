@@ -119,7 +119,7 @@ extension Decimal128: FloatingPoint {
     return Self(bitPattern: UInt128(truncatingIfNeeded: e) &<< 113 | c)
   }
 
-  @inlinable
+  @usableFromInline
   internal init(
     _sign: FloatingPointSign,
     exponent: Int,
@@ -386,7 +386,7 @@ extension Decimal128: FloatingPoint {
     return lhs.significandBitPattern <= rhs.significandBitPattern
   }
 
-  @inlinable
+  @usableFromInline
   internal func _addingProduct(
     _ lhs: Decimal128, _ rhs: Decimal128,
     rounding rule: _DecimalFloatingPointRoundingRule,
@@ -1043,7 +1043,7 @@ extension Decimal128: FloatingPoint {
     self = addingProduct(lhs, rhs, rounding: rule, &flags)
   }
 
-  @inlinable
+  @usableFromInline
   internal func _divided(
     by rhs: Decimal128,
     rounding rule: _DecimalFloatingPointRoundingRule,
@@ -1457,7 +1457,7 @@ extension Decimal128: FloatingPoint {
     self = divided(by: rhs, rounding: rule, &flags)
   }
 
-  @inlinable
+  @usableFromInline
   internal func _remainder(
     truncating: Bool,
     dividingBy divisor: Decimal128,
@@ -2107,7 +2107,7 @@ extension Decimal128: FloatingPoint {
     self = rounded(rule)
   }
 
-  @inlinable
+  @usableFromInline
   internal func _rounded(
     _ rule: _DecimalFloatingPointRoundingRule,
     _ flags: inout DecimalFloatingPointStatusFlags

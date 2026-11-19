@@ -48,7 +48,7 @@ extension Decimal128 {
       significandBitPattern: 1)
   }
 
-  @inlinable
+  @usableFromInline
   internal func _quantized(
     by other: Decimal128,
     rounding rule: _DecimalFloatingPointRoundingRule,
