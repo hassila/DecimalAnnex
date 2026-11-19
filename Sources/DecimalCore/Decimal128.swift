@@ -427,7 +427,7 @@ extension Decimal128: Equatable {
     if n > 33 { return false }
     let (lc, rc) = (lhs.significandBitPattern, rhs.significandBitPattern)
     guard lc < rc else { return false }
-    return unsafe lc.multipliedFullWidth(by: ._exp10[unchecked: n]) == (0, rc)
+    return unsafe lc._multipliedFullWidth(by: ._exp10[unchecked: n]) == (0, rc)
   }
 }
 
@@ -550,7 +550,7 @@ extension Decimal128: Comparable {
     if n > 33 { return isSwapped ? .less : .greater }
     let (lc, rc) = (lhs.significandBitPattern, rhs.significandBitPattern)
     guard lc < rc else { return isSwapped ? .less : .greater }
-    let scaled = unsafe lc.multipliedFullWidth(by: ._exp10[unchecked: n])
+    let scaled = unsafe lc._multipliedFullWidth(by: ._exp10[unchecked: n])
     if scaled == (0, rc) { return .equivalent }
     return isSwapped
       ? scaled > (0, rc) ? .less : .greater
@@ -613,7 +613,7 @@ extension Decimal128: Comparable {
     if n > 33 { return isSwapped }
     let (lc, rc) = (lhs.significandBitPattern, rhs.significandBitPattern)
     guard lc < rc else { return isSwapped }
-    let scaled = unsafe lc.multipliedFullWidth(by: ._exp10[unchecked: n])
+    let scaled = unsafe lc._multipliedFullWidth(by: ._exp10[unchecked: n])
     return isSwapped ? scaled > (0, rc) : scaled < (0, rc)
   }
 
