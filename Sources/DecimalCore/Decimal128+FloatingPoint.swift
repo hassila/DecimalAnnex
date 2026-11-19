@@ -1229,41 +1229,10 @@ extension Decimal128: FloatingPoint {
       if e >= 0 && e <= 12287 {
         let pe = min(12287, pe)
         if e < pe {
-          if (quo & 1) == 0, let quo_ = quo._quotientIfExactDividingBy10() {
-            var delta = pe &- (e &+ 1)
-            quo = quo_
-            if delta >= 32 && (quo & 0xFFFFFFFF) == 0,
-                let quo_ = quo._quotientIfExactDividingBy1e32() {
-              delta &-= 32
-              quo = quo_
-            }
-            if delta >= 16 && (quo & 0xFFFF) == 0,
-                let quo_ = quo._quotientIfExactDividingBy1e16() {
-              delta &-= 16
-              quo = quo_
-            }
-            if delta >= 8 && (quo & 0xFF) == 0,
-                let quo_ = quo._quotientIfExactDividingBy1e8() {
-              delta &-= 8
-              quo = quo_
-            }
-            if delta >= 4 && (quo & 0xF) == 0,
-                let quo_ = quo._quotientIfExactDividingBy10000() {
-              delta &-= 4
-              quo = quo_
-            }
-            if delta >= 2 && (quo & 0x3) == 0,
-                let quo_ = quo._quotientIfExactDividingBy100() {
-              delta &-= 2
-              quo = quo_
-            }
-            if delta >= 1 && (quo & 1) == 0,
-                let quo_ = quo._quotientIfExactDividingBy10() {
-              delta &-= 1
-              quo = quo_
-            }
-            e = pe &- delta
-          }
+          Self._select(
+            biasedExponent: &e,
+            nonzeroSignificand: &quo,
+            boundedPreferredBiasedExponent: pe)
         }
         let abs = Self(bitPattern: UInt128(truncatingIfNeeded: e) &<< 113 | quo)
         return isSignMinus ? -abs : abs
